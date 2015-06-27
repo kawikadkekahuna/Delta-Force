@@ -20,7 +20,7 @@ function Timer() {
       self.emit('pass', {
         interval: i++
       })
-    }, 1000);
+    }, 205);
 
   }
 
