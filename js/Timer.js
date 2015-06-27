@@ -8,53 +8,67 @@ function Timer() {
   this.startTime;
   this.endTime;
   var i = 0;
+  var heartbeat = false;
+
+  this.getHeartbeat = function() {
+    return heartbeat !== false;
+  }
 
 
   this.start = function() {
+    if (!this.getHeartbeat()) {
+      heartbeat = true;
+      this.intervalID = setInterval(this.startInterval, 205);
+      self.emit('start', {
+        startMS: Date.now()
+      });
+    }
+  }
 
-    self.emit('start', {
-      startMS: Date.now()
-    })
-
-    setInterval(function() {
-      self.emit('pass', {
-        interval: i++
-      })
-    }, 205);
-
+  this.startInterval = function() {
+    self.emit('pass', {
+      interval: i++
+    });
   }
 
   this.stop = function() {
-    self.emit('stop', {
-      stopMS: Date.now()
-    });
-
+    if (this.getHeartbeat()) {
+      clearInterval(this.intervalID);
+      heartbeat = false;
+      testTime.removeListener('pass', tickCounter);
+      self.emit('stop', {
+        stopMS: Date.now()
+      });
+    }
   }
+
+
+
 }
 
 util.inherits(Timer, EventEmitter);
-
-
 
 var testTime = new Timer();
 
 function tickCounter(event) {
   process.stdout.write('index ' + event.interval + '\n');
   if (event.interval === 12) {
-    testTime.removeListener('pass', tickCounter);
     testTime.stop();
+
   }
 }
 
 function setStartTime(event) {
   this.startTime = event.startMS;
-  // process.stdout.write('startTime' + this.startTime + '\n');
+  process.stdout.write('start time: ' + this.startTime + '\n');
+  process.stdout.write('interval on: ' + this.getHeartbeat() + '\n');
 }
 
 function setStopTime(event) {
   this.endTime = event.stopMS;
   var elapsed = this.startTime - this.endTime;
-  // process.stdout.write('stopTime' + this.endTime + '\n');
+  process.stdout.write('start time: ' + this.startTime + '\n');
+  process.stdout.write('interval on: ' + this.getHeartbeat() + '\n');
   process.stdout.write('time passed: ' + elapsed + ' ms');
 }
 
