@@ -8,6 +8,7 @@ function Timer(duration, deviation) {
   var self = this;
   this.startTime;
   this.endTime;
+  this.flag = false;
   var speed = 1000;
   var i = 1;
   var heartbeat = false;
@@ -24,7 +25,6 @@ function Timer(duration, deviation) {
   this.start = function() {
     if (!this.getHeartbeat()) {
       heartbeat = true;
-      this.intervalID = setInterval(this.startInterval, speed);
       self.emit('start', {
         startMS: Date.now()
       });
@@ -63,7 +63,6 @@ function Timer(duration, deviation) {
 
     if (event.interval === duration) {
       this.stop();
-
     }
   }
 
@@ -72,6 +71,8 @@ function Timer(duration, deviation) {
     process.stdout.write('start time: ' + this.startTime + '\n');
     process.stdout.write('interval on: ' + this.getHeartbeat() + '\n');
     process.stdout.write('-------------------------------' + '\n');
+    this.intervalID = setInterval(this.startInterval, speed);
+
   }
 
   function setStopTime(event) {
@@ -90,6 +91,9 @@ function Timer(duration, deviation) {
       process.stdout.write('truetime ' + event.trueTime + ' ');
       process.stdout.write('realtime ' + event.realTime + ' ');
       process.stdout.write('lag ' + lag + '\n');
+      clearInterval(this.intervalID);
+      speed -= lag;
+      setTimeout(tickCounter,speed,{interval:i++});
     }
   }
 
