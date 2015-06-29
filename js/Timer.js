@@ -2,12 +2,12 @@ var EventEmitter = require('events');
 var util = require('util');
 // var timers = require('timers');
 
-function Timer(duration, deviation) {
+function Timer(duration, deviation, TICK_SPEED) {
   EventEmitter.call(this);
   var self = this;
   this.startTime;
   this.endTime;
-  var TICK_SPEED = 200;
+  var TICK_SPEED = TICK_SPEED || 1000;
   var TICK_COUNTER = 0;
 
   deviation = deviation || 50;
@@ -22,7 +22,7 @@ function Timer(duration, deviation) {
   this.stop = function() {
     self.emit('stop', {
       stopTime: Date.now()
-    })
+    });
   }
 
   function loop() {
@@ -36,8 +36,7 @@ function Timer(duration, deviation) {
         });
       }
 
-      LAG_SPEED -=  Math.abs(self.startTime - Date.now()) - (TICK_SPEED * TICK_COUNTER)
-       console.log('LAG_SPEED',LAG_SPEED); 
+      LAG_SPEED -= Math.abs(self.startTime - Date.now()) - (TICK_SPEED * TICK_COUNTER)
       setTimeout(function() {
         self.emit('tick', {
           interval: TICK_COUNTER++
@@ -49,29 +48,30 @@ function Timer(duration, deviation) {
       self.stop();
     }
   }
-
+  //DISPLAY FUNCTIONS
   function setStartTime(event) {
     self.startTime = Math.abs(event.startTime);
-    process.stdout.write('start time: ' + this.startTime + '\n');
+    process.stdout.write('start time: ' + self.startTime + '\n');
     process.stdout.write('-------------------------------' + '\n');
   }
 
-
   function setStopTime(event) {
     self.endTime = event.stopTime;
-    var elapsed = Math.abs(this.startTime - this.endTime);
+    var elapsed = Math.abs(self.startTime - self.endTime);
     process.stdout.write('\n' + '-------------------------------' + '\n');
     process.stdout.write('stop time: ' + this.startTime + '\n');
     process.stdout.write('time passed: ' + elapsed + ' ms' + '\n');
     process.stdout.write('COMPLETE \n');
-    this.removeListener('stop', setStartTime);
+    self.removeListener('start', setStartTime);
+    self.removeListener('lag', displayLag);
+    self.removeListener('tick', ticker);
+    self.removeListener('stop', setStartTime);
+
   }
 
   function displayLag(event) {
     var lag = Math.abs(event.realTime - event.trueTime);
     if (lag > deviation) {
-      process.stdout.write('truetime ' + event.trueTime + ' ');
-      process.stdout.write('realtime ' + event.realTime + ' ');
       process.stdout.write('lag ' + lag + '\n');
     }
   }
@@ -89,5 +89,5 @@ function Timer(duration, deviation) {
 
 util.inherits(Timer, EventEmitter);
 
-var timer = new Timer(10, 1);
+var timer = new Timer(30, 1,100);
 timer.start();
